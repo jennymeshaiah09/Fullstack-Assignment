@@ -13,16 +13,18 @@ const { Storage } = require('@google-cloud/storage');
 const Video = require('../models/Video');
 const s3Client = require('../config/s3');
 
-const GOOGLE_CREDENTIALS = path.join(__dirname, '../config/google-credentials.json');
 const GCS_BUCKET = 'pulsevid-video-intel-tmp';
 
-const videoIntelligenceClient = new VideoIntelligenceServiceClient({
-  keyFilename: GOOGLE_CREDENTIALS,
-});
+// Support both local keyfile and env variable (for production/Render)
+let googleCredentials;
+if (process.env.GOOGLE_CREDENTIALS_JSON) {
+  googleCredentials = { credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON) };
+} else {
+  googleCredentials = { keyFilename: path.join(__dirname, '../config/google-credentials.json') };
+}
 
-const gcsClient = new Storage({
-  keyFilename: GOOGLE_CREDENTIALS,
-});
+const videoIntelligenceClient = new VideoIntelligenceServiceClient(googleCredentials);
+const gcsClient = new Storage(googleCredentials);
 
 const BUCKET = process.env.AWS_S3_BUCKET;
 
