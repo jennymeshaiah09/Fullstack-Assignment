@@ -1,0 +1,98 @@
+---
+title: Frontend Overview
+description: React 18 frontend architecture for Video Sensitivity Analyser
+---
+
+## Stack
+
+| Technology | Purpose |
+|---|---|
+| React 18 | UI component library |
+| Vite | Build tool and dev server |
+| React Router v6 | Client-side routing |
+| Axios | HTTP client with JWT interceptor |
+| Socket.io-client | Real-time processing events |
+| Context API | Global auth state |
+
+---
+
+## Routing
+
+All routes are defined in `src/App.jsx`. Routes are either **public** or **protected**.
+
+### Public Routes
+
+| Path | Component | Description |
+|---|---|---|
+| `/login` | `Login.jsx` | Login form |
+| `/register` | `Register.jsx` | Registration form |
+
+### Protected Routes (require valid JWT)
+
+| Path | Component | Role Required |
+|---|---|---|
+| `/dashboard` | `Dashboard.jsx` | Any |
+| `/upload` | `Upload.jsx` | Any |
+| `/library` | `Library.jsx` | Any |
+| `/video/:id` | `VideoPlayer.jsx` | Any |
+| `/admin` | `Admin.jsx` | `admin` |
+
+The `ProtectedRoute` component checks for a token in `localStorage`. If absent, the user is redirected to `/login`. If `requiredRole` is set, it also validates the user's role.
+
+---
+
+## Auth Context
+
+`src/context/AuthContext.jsx` provides global auth state via React Context:
+
+```js
+const { user, token, login, logout } = useAuth();
+```
+
+| Value | Type | Description |
+|---|---|---|
+| `user` | object \| null | Current user object (`_id`, `name`, `email`, `role`) |
+| `token` | string \| null | JWT string |
+| `login(token, user)` | function | Stores token, sets Axios header, updates state |
+| `logout()` | function | Clears `localStorage`, resets Axios header and state |
+
+---
+
+## Axios Instance
+
+`src/utils/api.js` exports a pre-configured Axios instance:
+
+```js
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+});
+
+// Automatically attach JWT to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+export default api;
+```
+
+All pages import `api` and use it instead of raw `fetch`.
+
+---
+
+## Environment Variables (Frontend)
+
+Create `frontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+For production (`frontend/.env.production`):
+
+```env
+VITE_API_URL=https://your-backend.onrender.com
+```

@@ -1,0 +1,84 @@
+---
+title: Stream Video
+description: Stream a video with HTTP Range support
+api: GET /api/videos/{id}/stream
+---
+
+## Stream Video
+
+Streams video bytes directly from AWS S3 with HTTP Range request support, enabling seeking and progressive playback in the browser.
+
+**Requires authentication.** Token can be passed as a query parameter since browsers cannot set custom headers on `<video>` elements.
+
+---
+
+### Path Parameters
+
+| Parameter | Description |
+|---|---|
+| `id` | MongoDB `_id` of the video |
+
+### Query Parameters
+
+| Parameter | Description |
+|---|---|
+| `token` | JWT token (alternative to `Authorization` header — required for browser `<video>` tag) |
+
+### Request Headers
+
+| Header | Description |
+|---|---|
+| `Range` | Optional. Byte range for partial content (e.g. `bytes=0-1048575`) |
+
+---
+
+### Request (via Authorization header)
+
+```http
+GET /api/videos/69ccf0bd3f1a2b4c5d6e7f89/stream
+Authorization: Bearer <token>
+Range: bytes=0-1048575
+```
+
+### Request (via query param — for browser `<video>` tag)
+
+```http
+GET /api/videos/69ccf0bd3f1a2b4c5d6e7f89/stream?token=eyJhbGci...
+```
+
+---
+
+### Response `206 Partial Content` (with Range)
+
+```http
+HTTP/1.1 206 Partial Content
+Content-Range: bytes 0-1048575/98764321
+Accept-Ranges: bytes
+Content-Length: 1048576
+Content-Type: video/mp4
+```
+
+### Response `200 OK` (without Range)
+
+```http
+HTTP/1.1 200 OK
+Content-Length: 98764321
+Content-Type: video/mp4
+Accept-Ranges: bytes
+```
+
+---
+
+### Usage in React
+
+```jsx
+<video
+  src={`${API_URL}/api/videos/${video._id}/stream?token=${token}`}
+  controls
+  style={{ width: '100%' }}
+/>
+```
+
+<Note>
+  The browser's `<video>` element automatically sends Range headers for seeking. The server forwards these to S3 and streams the partial response back — enabling efficient, seek-enabled playback without downloading the entire file.
+</Note>

@@ -1,0 +1,81 @@
+---
+title: Video Model
+description: MongoDB Video schema reference
+---
+
+## Video Schema
+
+Defined in `backend/models/Video.js` using Mongoose. One document is created per uploaded video.
+
+---
+
+### Fields
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `title` | String | ✅ | — | Display title (defaults to original filename) |
+| `filename` | String | ✅ | — | S3 key (same as `s3Key`, kept for compatibility) |
+| `originalName` | String | ✅ | — | Original upload filename including extension |
+| `filePath` | String | ✅ | — | S3 key (fallback for stream/delete if `s3Key` missing) |
+| `fileSize` | Number | ✅ | — | Size in bytes |
+| `mimeType` | String | ✅ | — | e.g. `video/mp4` |
+| `duration` | Number | No | `0` | Duration in seconds (not yet extracted) |
+| `status` | String | No | `"pending"` | `pending` \| `processing` \| `safe` \| `flagged` |
+| `sensitivityScore` | Number | No | `0` | Highest score across all categories (0–95) |
+| `sensitivityDetails.violence` | Boolean | No | `false` | Violence score ≥ 40 |
+| `sensitivityDetails.adult` | Boolean | No | `false` | Adult score ≥ 40 |
+| `sensitivityDetails.hate` | Boolean | No | `false` | Hate score ≥ 40 |
+| `uploadedBy` | ObjectId | ✅ | — | Ref → `User` collection |
+| `organisation` | String | No | `"default"` | Inherited from uploader at upload time |
+| `s3Key` | String | No | — | S3 object key e.g. `videos/uuid.mp4` |
+| `s3Url` | String | No | — | Full public S3 URL |
+| `thumbnailUrl` | String | No | — | S3 URL of FFmpeg-generated thumbnail |
+| `processingProgress` | Number | No | `0` | 0–100 percentage |
+| `processingStage` | String | No | `"pending"` | `pending` \| `validating` \| `analysing` \| `classifying` \| `complete` \| `error` |
+| `createdAt` | Date | No | `Date.now` | Upload timestamp |
+| `updatedAt` | Date | No | `Date.now` | Last modified timestamp |
+
+---
+
+### Example Document (Flagged)
+
+```json
+{
+  "_id": "69ccf0bd3f1a2b4c5d6e7f89",
+  "title": "My Video",
+  "originalName": "480p.h264.mp4",
+  "s3Key": "videos/3f7a1b2c-uuid.mp4",
+  "s3Url": "https://vidsense-videos.s3.ap-south-1.amazonaws.com/videos/3f7a...mp4",
+  "thumbnailUrl": "https://vidsense-videos.s3.ap-south-1.amazonaws.com/thumbnails/69ccf0bd.jpg",
+  "fileSize": 98764321,
+  "mimeType": "video/mp4",
+  "duration": 0,
+  "status": "flagged",
+  "sensitivityScore": 85,
+  "sensitivityDetails": {
+    "violence": false,
+    "adult": true,
+    "hate": false
+  },
+  "processingStage": "complete",
+  "processingProgress": 100,
+  "uploadedBy": "64f1a2b3c4d5e6f7a8b9c0d1",
+  "organisation": "default",
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:05:30.000Z"
+}
+```
+
+---
+
+### Status Lifecycle
+
+```
+pending → processing → safe
+                    → flagged
+                    → error (on pipeline failure)
+```
+
+<Note>
+  The `error` status is set if `processVideo()` throws an unexpected error. It is not exposed in the status filter query param — it's an internal recovery state.
+</Note>

@@ -1,0 +1,52 @@
+---
+title: Get Current User
+description: Fetch the authenticated user's profile
+api: GET /api/auth/me
+---
+
+## Get Current User
+
+Returns the profile of the currently authenticated user. The password field is never included.
+
+**Requires authentication.**
+
+---
+
+### Request
+
+```http
+GET /api/auth/me
+Authorization: Bearer <token>
+```
+
+---
+
+### Response `200 OK`
+
+```json
+{
+  "user": {
+    "_id": "64f1a2b3c4d5e6f7a8b9c0d1",
+    "name": "Jenny",
+    "email": "jenny@example.com",
+    "role": "admin",
+    "organisation": "default",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Response `401 Unauthorized`
+
+```json
+{ "message": "No token provided, authorisation denied" }
+```
+
+---
+
+### Example
+
+```bash cURL
+curl http://localhost:5000/api/auth/me \
+  -H "Authorization: Bearer eyJhbGci..."
+```

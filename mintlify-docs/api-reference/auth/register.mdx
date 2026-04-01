@@ -1,0 +1,84 @@
+---
+title: Register
+description: Create a new user account
+api: POST /api/auth/register
+---
+
+## Register a New User
+
+Creates a new user account and returns a JWT token for immediate use.
+
+**No authentication required.**
+
+---
+
+### Request Body
+
+```json
+{
+  "name": "Jenny",
+  "email": "jenny@example.com",
+  "password": "password123",
+  "role": "admin"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | ✅ | Display name |
+| `email` | string | ✅ | Must be unique |
+| `password` | string | ✅ | Min recommended: 8 characters |
+| `role` | string | No | `viewer` \| `editor` \| `admin` (default: `viewer`) |
+
+---
+
+### Response `201 Created`
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "64f1a2b3c4d5e6f7a8b9c0d1",
+    "name": "Jenny",
+    "email": "jenny@example.com",
+    "role": "admin"
+  }
+}
+```
+
+### Response `400 Bad Request`
+
+```json
+{ "message": "User already exists" }
+```
+
+---
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jenny",
+    "email": "jenny@example.com",
+    "password": "password123",
+    "role": "admin"
+  }'
+```
+
+```js JavaScript (fetch)
+const res = await fetch('/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    name: 'Jenny',
+    email: 'jenny@example.com',
+    password: 'password123',
+    role: 'admin',
+  }),
+});
+const { token, user } = await res.json();
+```
+</CodeGroup>

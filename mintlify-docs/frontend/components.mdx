@@ -1,0 +1,61 @@
+---
+title: Components
+description: Reusable React components in Video Sensitivity Analyser
+---
+
+## Component Reference
+
+### Navbar
+**File:** `src/components/Navbar.jsx`
+
+Fixed top navigation bar with:
+- Logo (links to `/dashboard`)
+- Nav links: Dashboard, Upload, Library, Admin (admin-only)
+- User badge showing name, email initials, and role chip
+- Logout button — calls `AuthContext.logout()` and redirects to `/login`
+
+---
+
+### ProtectedRoute
+**File:** `src/components/ProtectedRoute.jsx`
+
+Auth guard wrapper for React Router routes.
+
+```jsx
+<ProtectedRoute requiredRole="admin">
+  <AdminPage />
+</ProtectedRoute>
+```
+
+| Prop | Type | Description |
+|---|---|---|
+| `children` | ReactNode | The page to render if authorised |
+| `requiredRole` | string (optional) | If set, user must have this exact role |
+
+Redirects to `/login` if no token. Redirects to `/dashboard` if role doesn't match.
+
+---
+
+### VideoCard
+**File:** `src/components/VideoCard.jsx`
+
+Displays a video thumbnail, title, status badge, file size, and date in a grid card. Clicking navigates to `/video/:id`.
+
+Status badges:
+- 🟢 `safe`
+- 🔴 `flagged`
+- 🟡 `processing`
+- ⚫ `pending`
+
+---
+
+### ProcessingStatus
+**File:** `src/components/ProcessingStatus.jsx`
+
+Shows a progress bar and stage stepper during video analysis. Connects to Socket.io on mount and listens for `processing_progress` events filtered to the video's `_id`.
+
+Stages displayed:
+1. Validating (20%)
+2. Analysing (50%)
+3. Classifying (80%)
+4. Complete (100%)

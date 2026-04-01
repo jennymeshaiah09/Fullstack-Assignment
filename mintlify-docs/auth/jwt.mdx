@@ -1,0 +1,98 @@
+---
+title: Authentication & JWT
+description: How JWT-based authentication works in Video Sensitivity Analyser
+---
+
+## Overview
+
+VidSense AI uses **JSON Web Tokens (JWT)** for stateless authentication. Every protected route requires a valid token in the `Authorization` header.
+
+---
+
+## Token Lifecycle
+
+<Steps>
+  <Step title="Register or Login">
+    The user submits credentials to `/api/auth/register` or `/api/auth/login`.  
+    The server validates, hashes the password (bcryptjs, 10 salt rounds), then signs a JWT:
+
+    ```js
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    });
+    ```
+  </Step>
+
+  <Step title="Store Token">
+    The frontend stores the JWT in `localStorage` and sets it as the Axios default header:
+
+    ```js
+    localStorage.setItem('token', token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    ```
+  </Step>
+
+  <Step title="Send with Every Request">
+    All protected API calls include:
+
+    ```http
+    Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    ```
+  </Step>
+
+  <Step title="Server Verifies">
+    The `protect` middleware verifies and decodes the token on every protected route:
+
+    ```js
+    const token = queryToken || authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select('-password');
+    ```
+  </Step>
+</Steps>
+
+---
+
+## The `protect` Middleware
+
+```js
+const protect = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const queryToken  = req.query.token; // for <video> streaming
+
+  if (!authHeader && !queryToken) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+
+  const token   = queryToken || authHeader.split(' ')[1];
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  req.user      = await User.findById(decoded.id).select('-password');
+  next();
+};
+```
+
+<Note>
+  The `?token=` query parameter is supported specifically for video streaming — browsers cannot set custom headers on `<video src="">` requests.
+</Note>
+
+---
+
+## Video Streaming Auth
+
+Since the HTML `<video>` element sends requests without custom headers, the stream endpoint accepts the JWT as a query parameter:
+
+```
+GET /api/videos/:id/stream?token=eyJhbGci...
+```
+
+---
+
+## Security Notes
+
+<Warning>
+  JWTs are stored in `localStorage`, which is accessible to JavaScript. This is acceptable for this project context. In a production environment, consider using `httpOnly` cookies to prevent XSS token theft.
+</Warning>
+
+- Tokens expire after **7 days** by default (`JWT_EXPIRES_IN`)
+- There is no token refresh mechanism — users must re-login after expiry
+- Passwords are never returned in API responses (`.select('-password')`)

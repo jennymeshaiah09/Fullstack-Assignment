@@ -1,0 +1,84 @@
+---
+title: Large File Analysis
+description: How videos over 40 MB are handled via Google Cloud Storage
+---
+
+## The 40 MB Threshold
+
+Google Cloud Video Intelligence API supports two modes for providing video data:
+
+| Mode | When used | How |
+|---|---|---|
+| **Inline (base64)** | File ≤ 40 MB | Video bytes are base64-encoded and sent directly in the API request body |
+| **GCS URI** | File > 40 MB | Video is uploaded to a Google Cloud Storage bucket and passed as a `gs://` URI |
+
+The threshold is defined as:
+
+```js
+const INLINE_SIZE_LIMIT = 40 * 1024 * 1024; // 40 MB
+```
+
+---
+
+## GCS Staging Flow
+
+For large files, the pipeline adds an extra step:
+
+<Steps>
+  <Step title="Download from S3">
+    The video is downloaded from its S3 location to the server's temp directory (`os.tmpdir()`).
+  </Step>
+  <Step title="Upload to GCS Temp Bucket">
+    The file is uploaded to `pulsevid-video-intel-tmp` GCS bucket under a unique path:
+    ```
+    tmp/<uuid>_video.mp4
+    ```
+    The resulting URI is:
+    ```
+    gs://pulsevid-video-intel-tmp/tmp/<uuid>_video.mp4
+    ```
+  </Step>
+  <Step title="Pass URI to Video Intelligence API">
+    Both API calls (`EXPLICIT_CONTENT_DETECTION` and `LABEL_DETECTION`) receive the `gs://` URI as `inputUri` instead of inline content.
+  </Step>
+  <Step title="Immediate GCS Cleanup">
+    As soon as both API operations resolve (whether they succeed or fail), the GCS object is deleted:
+    ```js
+    gcsClient.bucket(GCS_BUCKET).file(gcsObjectName).delete().catch(() => {});
+    ```
+    Errors during deletion are silently ignored to prevent blocking the pipeline.
+  </Step>
+</Steps>
+
+---
+
+## Code Reference
+
+```js
+if (fileSize > INLINE_SIZE_LIMIT) {
+  gcsObjectName = `tmp/${uuidv4()}_video.mp4`;
+  await gcsClient.bucket(GCS_BUCKET).upload(tmpVideo, { destination: gcsObjectName });
+  const gcsUri = `gs://${GCS_BUCKET}/${gcsObjectName}`;
+
+  explicitRequest = { inputUri: gcsUri, features: ['EXPLICIT_CONTENT_DETECTION'] };
+  labelRequest    = { inputUri: gcsUri, features: ['LABEL_DETECTION'] };
+} else {
+  const inputContent = fs.readFileSync(tmpVideo).toString('base64');
+  explicitRequest = { inputContent, features: ['EXPLICIT_CONTENT_DETECTION'] };
+  labelRequest    = { inputContent, features: ['LABEL_DETECTION'] };
+}
+```
+
+---
+
+## GCS Bucket Setup
+
+You need to create a GCS bucket for staging:
+
+1. Go to [Google Cloud Console → Cloud Storage](https://console.cloud.google.com/storage)
+2. Create a bucket named `pulsevid-video-intel-tmp` (or your chosen name matching the `GCS_BUCKET` constant in `videoController.js`)
+3. Give your service account the `Storage Object Admin` role on this bucket
+
+<Warning>
+  If the GCS bucket doesn't exist or the service account lacks permissions, large file analysis will fail and the video will fall back to `status: "safe"` with `sensitivityScore: 5`.
+</Warning>

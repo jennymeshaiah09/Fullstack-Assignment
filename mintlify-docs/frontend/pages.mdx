@@ -1,0 +1,49 @@
+---
+title: Pages
+description: All React pages in Video Sensitivity Analyser
+---
+
+## Page Reference
+
+### Login — `/login`
+**File:** `src/pages/Login.jsx`  
+**Public.** Email/password form. On success, calls `AuthContext.login()` and redirects to `/dashboard`.
+
+---
+
+### Register — `/register`
+**File:** `src/pages/Register.jsx`  
+**Public.** Name, email, password, and role selection. Defaults role to `viewer` in the UI.
+
+---
+
+### Dashboard — `/dashboard`
+**File:** `src/pages/Dashboard.jsx`  
+**Protected.** Shows an overview of the user's video stats (total, safe, flagged, processing) and a grid of recent videos. Listens to Socket.io events to update processing cards in real time.
+
+---
+
+### Upload — `/upload`
+**File:** `src/pages/Upload.jsx`  
+**Protected.** Drag-and-drop upload zone. Accepts MP4, WebM, MOV, AVI, MKV up to 500 MB. Shows a live `ProcessingStatus` component while the video is being analysed.
+
+---
+
+### Library — `/library`
+**File:** `src/pages/Library.jsx`  
+**Protected.** Full video grid with:
+- **Filter** by status: All / Safe / Flagged / Processing / Pending
+- **Search** by title (client-side)
+- **Sort** by newest / oldest / name A–Z / name Z–A
+
+---
+
+### Video Player — `/video/:id`
+**File:** `src/pages/VideoPlayer.jsx`  
+**Protected.** Plays the selected video using a `<video>` tag streamed from `/api/videos/:id/stream?token=`. Displays the full sensitivity analysis result including score and category breakdown.
+
+---
+
+### Admin — `/admin`
+**File:** `src/pages/Admin.jsx`  
+**Protected (admin only).** Cross-user video management. Calls `GET /api/videos/admin/all` to list all platform videos. Supports filtering by status and user ID. Admins can delete any video from here.

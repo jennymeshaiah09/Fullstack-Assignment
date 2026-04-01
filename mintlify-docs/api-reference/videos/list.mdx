@@ -1,0 +1,77 @@
+---
+title: List Videos
+description: Get all videos for the authenticated user
+api: GET /api/videos
+---
+
+## List Videos
+
+Returns all videos belonging to the authenticated user, sorted newest first. Admins see only their own videos here — use the [Admin: All Videos](/api-reference/admin/all-videos) endpoint for cross-user access.
+
+**Requires authentication.**
+
+---
+
+### Request
+
+```http
+GET /api/videos
+Authorization: Bearer <token>
+```
+
+### Query Parameters
+
+| Parameter | Values | Description |
+|---|---|---|
+| `status` | `pending` \| `processing` \| `safe` \| `flagged` | Filter by processing status |
+
+```http
+GET /api/videos?status=flagged
+```
+
+---
+
+### Response `200 OK`
+
+```json
+{
+  "videos": [
+    {
+      "_id": "69ccf0bd3f1a2b4c5d6e7f89",
+      "title": "my-video",
+      "originalName": "my-video.mp4",
+      "status": "flagged",
+      "sensitivityScore": 85,
+      "sensitivityDetails": {
+        "violence": false,
+        "adult": true,
+        "hate": false
+      },
+      "s3Key": "videos/uuid.mp4",
+      "s3Url": "https://...",
+      "thumbnailUrl": "https://.../thumbnails/69ccf0bd.jpg",
+      "fileSize": 98764321,
+      "mimeType": "video/mp4",
+      "processingStage": "complete",
+      "processingProgress": 100,
+      "uploadedBy": "64f1a2b3c4d5e6f7a8b9c0d1",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:05:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### Example
+
+```bash cURL
+# All videos
+curl http://localhost:5000/api/videos \
+  -H "Authorization: Bearer eyJhbGci..."
+
+# Only flagged videos
+curl "http://localhost:5000/api/videos?status=flagged" \
+  -H "Authorization: Bearer eyJhbGci..."
+```

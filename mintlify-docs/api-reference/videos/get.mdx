@@ -1,0 +1,80 @@
+---
+title: Get Video
+description: Get a single video's metadata and analysis results
+api: GET /api/videos/{id}
+---
+
+## Get Video
+
+Returns full metadata for a single video including its sensitivity analysis results.
+
+**Requires authentication.** Users can only access their own videos. Admins can access any video.
+
+---
+
+### Path Parameters
+
+| Parameter | Description |
+|---|---|
+| `id` | MongoDB `_id` of the video |
+
+### Request
+
+```http
+GET /api/videos/69ccf0bd3f1a2b4c5d6e7f89
+Authorization: Bearer <token>
+```
+
+---
+
+### Response `200 OK`
+
+```json
+{
+  "video": {
+    "_id": "69ccf0bd3f1a2b4c5d6e7f89",
+    "title": "My Video",
+    "originalName": "480p.h264.mp4",
+    "s3Key": "videos/uuid.mp4",
+    "s3Url": "https://bucket.s3.region.amazonaws.com/videos/uuid.mp4",
+    "thumbnailUrl": "https://bucket.s3.region.amazonaws.com/thumbnails/69ccf0bd.jpg",
+    "fileSize": 98764321,
+    "mimeType": "video/mp4",
+    "duration": 0,
+    "status": "flagged",
+    "sensitivityScore": 85,
+    "sensitivityDetails": {
+      "violence": false,
+      "adult": true,
+      "hate": false
+    },
+    "processingStage": "complete",
+    "processingProgress": 100,
+    "uploadedBy": "64f1a2b3c4d5e6f7a8b9c0d1",
+    "organisation": "default",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:05:00.000Z"
+  }
+}
+```
+
+### Response `404 Not Found`
+
+```json
+{ "message": "Video not found" }
+```
+
+### Response `403 Forbidden`
+
+```json
+{ "message": "Not authorised to access this video" }
+```
+
+---
+
+### Example
+
+```bash cURL
+curl http://localhost:5000/api/videos/69ccf0bd3f1a2b4c5d6e7f89 \
+  -H "Authorization: Bearer eyJhbGci..."
+```

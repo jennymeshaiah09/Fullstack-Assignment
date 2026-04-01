@@ -1,0 +1,88 @@
+---
+title: Admin — All Videos
+description: Get all videos across all users (admin only)
+api: GET /api/videos/admin/all
+---
+
+## Get All Videos (Admin)
+
+Returns all videos across **all users** in the platform. The `uploadedBy` field is populated with the uploader's name, email, and role.
+
+**Requires authentication + `admin` role.**
+
+---
+
+### Request
+
+```http
+GET /api/videos/admin/all
+Authorization: Bearer <admin-token>
+```
+
+### Query Parameters
+
+| Parameter | Values | Description |
+|---|---|---|
+| `status` | `pending` \| `processing` \| `safe` \| `flagged` | Filter by video status |
+| `userId` | MongoDB `_id` | Filter to a specific user's videos |
+
+```http
+GET /api/videos/admin/all?status=flagged
+GET /api/videos/admin/all?userId=64f1a2b3c4d5e6f7a8b9c0d1
+```
+
+---
+
+### Response `200 OK`
+
+```json
+{
+  "videos": [
+    {
+      "_id": "69ccf0bd3f1a2b4c5d6e7f89",
+      "title": "Flagged Video",
+      "status": "flagged",
+      "sensitivityScore": 85,
+      "sensitivityDetails": {
+        "violence": false,
+        "adult": true,
+        "hate": false
+      },
+      "uploadedBy": {
+        "_id": "64f1a2b3c4d5e6f7a8b9c0d1",
+        "name": "Jenny",
+        "email": "jenny@example.com",
+        "role": "editor",
+        "organisation": "default"
+      },
+      "s3Key": "videos/uuid.mp4",
+      "fileSize": 98764321,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### Response `403 Forbidden`
+
+```json
+{ "message": "Role 'editor' is not authorised to access this route" }
+```
+
+---
+
+### Example
+
+```bash cURL
+# All videos on the platform
+curl http://localhost:5000/api/videos/admin/all \
+  -H "Authorization: Bearer <admin-token>"
+
+# Filter: only flagged videos
+curl "http://localhost:5000/api/videos/admin/all?status=flagged" \
+  -H "Authorization: Bearer <admin-token>"
+```
+
+<Note>
+  This endpoint is used by the `/admin` dashboard in the frontend. Non-admin users will receive a 403 even if they try to call this directly with a valid token.
+</Note>

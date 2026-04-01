@@ -1,0 +1,144 @@
+---
+title: Roles & Permissions
+description: Role-based access control (RBAC) in Video Sensitivity Analyser
+---
+
+## Overview
+
+Every user account has one of three roles: `viewer`, `editor`, or `admin`. Roles are stored on the User document and embedded in the JWT payload. The `authorise` middleware enforces role restrictions on specific routes.
+
+---
+
+## Role Comparison
+
+| Permission | Viewer | Editor | Admin |
+|---|:---:|:---:|:---:|
+| View own videos | ✅ | ✅ | ✅ |
+| Stream own videos | ✅ | ✅ | ✅ |
+| See sensitivity results | ✅ | ✅ | ✅ |
+| Upload new videos | ❌ | ✅ | ✅ |
+| Delete own videos | ❌ | ✅ | ✅ |
+| View **any** user's videos | ❌ | ❌ | ✅ |
+| Stream **any** user's videos | ❌ | ❌ | ✅ |
+| Delete **any** video | ❌ | ❌ | ✅ |
+| Access `/admin` dashboard | ❌ | ❌ | ✅ |
+| `GET /api/videos/admin/all` | ❌ | ❌ | ✅ |
+
+---
+
+## Role Details
+
+<CardGroup cols={3}>
+  <Card title="👁️ Viewer" icon="eye">
+    **Read-only access to own content.**
+
+    Can browse the library and watch their uploaded videos. Cannot upload or delete. Suitable for stakeholders who need to review flagged content without modifying anything.
+  </Card>
+  <Card title="✏️ Editor" icon="pen">
+    **Full access to own content.**
+
+    Can upload videos, watch them, and delete them. Cannot access other users' content. The default role for regular team members.
+  </Card>
+  <Card title="🛡️ Admin" icon="shield">
+    **Full platform access.**
+
+    Can view, stream, and delete videos belonging to any user. Has access to the `/admin` dashboard with cross-user filtering. Assign this role sparingly.
+  </Card>
+</CardGroup>
+
+---
+
+## How Roles Are Enforced
+
+### Setting a Role at Registration
+
+```json
+POST /api/auth/register
+{
+  "name": "Jenny",
+  "email": "jenny@example.com",
+  "password": "password123",
+  "role": "admin"
+}
+```
+
+If `role` is omitted, it defaults to `"viewer"`.
+
+---
+
+### The `authorise` Middleware
+
+```js
+const authorise = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        message: `Role '${req.user.role}' is not authorised to access this route`,
+      });
+    }
+    next();
+  };
+};
+```
+
+Routes use it like this:
+
+```js
+// Only admins can call this
+router.get('/admin/all', protect, authorise('admin'), getAllVideosAdmin);
+```
+
+---
+
+### Ownership Checks
+
+For single-video operations (view, stream, delete), the controllers enforce an **ownership or admin** check:
+
+```js
+const isOwner = video.uploadedBy.toString() === req.user._id.toString();
+const isAdmin = req.user.role === 'admin';
+
+if (!isOwner && !isAdmin) {
+  return res.status(403).json({ message: 'Not authorised' });
+}
+```
+
+This means an `editor` cannot delete another editor's video — even though their role technically allows deletion in general.
+
+---
+
+## Role in the JWT
+
+The role is encoded inside the JWT at login time. You can decode it on the client:
+
+```js
+// Decoded JWT payload example
+{
+  "id": "64f1a2b3c4d5e6f7a8b9c0d1",
+  "iat": 1700000000,
+  "exp": 1700604800
+}
+```
+
+<Note>
+  The role is **not stored in the JWT payload** — it is always fetched fresh from MongoDB on each request via `User.findById(decoded.id)`. This means role changes take effect immediately without requiring re-login.
+</Note>
+
+---
+
+## Frontend Route Guards
+
+The React `ProtectedRoute` component wraps every authenticated page. Admin-only routes additionally pass a `requiredRole` prop:
+
+```jsx
+<Route
+  path="/admin"
+  element={
+    <ProtectedRoute requiredRole="admin">
+      <AppLayout><Admin /></AppLayout>
+    </ProtectedRoute>
+  }
+/>
+```
+
+If a non-admin user tries to access `/admin`, they are redirected to `/dashboard`.

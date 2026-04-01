@@ -1,0 +1,62 @@
+---
+title: User Model
+description: MongoDB User schema reference
+---
+
+## User Schema
+
+Defined in `backend/models/User.js` using Mongoose.
+
+---
+
+### Fields
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `name` | String | ✅ | — | Display name |
+| `email` | String | ✅ | — | Unique, lowercased email address |
+| `password` | String | ✅ | — | bcrypt-hashed password (never returned in API responses) |
+| `role` | String | No | `"viewer"` | One of `viewer` \| `editor` \| `admin` |
+| `organisation` | String | No | `"default"` | Organisation group (for multi-tenant filtering) |
+| `createdAt` | Date | No | `Date.now` | Account creation timestamp |
+
+---
+
+### Example Document
+
+```json
+{
+  "_id": "64f1a2b3c4d5e6f7a8b9c0d1",
+  "name": "Jenny",
+  "email": "jenny@example.com",
+  "password": "$2b$10$hashed...",
+  "role": "admin",
+  "organisation": "default",
+  "createdAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+---
+
+### Password Hashing
+
+The password is hashed using `bcryptjs` with 10 salt rounds before saving:
+
+```js
+const salt = await bcrypt.genSalt(10);
+user.password = await bcrypt.hash(password, salt);
+```
+
+Verification at login:
+
+```js
+const isMatch = await bcrypt.compare(password, user.password);
+```
+
+---
+
+### API Exposure
+
+The `password` field is **always excluded** from API responses using `.select('-password')`.
+
+The role is returned in login/register responses and in `GET /api/auth/me`.

@@ -1,0 +1,98 @@
+---
+title: Upload Video
+description: Upload a video file for AI sensitivity analysis
+api: POST /api/videos/upload
+---
+
+## Upload Video
+
+Uploads a video file to AWS S3 and immediately queues it for AI sensitivity analysis. The response is returned as soon as the upload is complete — processing happens asynchronously.
+
+**Requires authentication.**
+
+---
+
+### Request
+
+```http
+POST /api/videos/upload
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `video` | file | ✅ | The video file (multipart field name must be `video`) |
+| `title` | string | No | Display title — defaults to the original filename |
+
+**Supported formats:** MP4, WebM, MOV, AVI, MKV  
+**Max size:** 500 MB (`MAX_FILE_SIZE` env var)
+
+---
+
+### Response `201 Created`
+
+```json
+{
+  "video": {
+    "_id": "69ccf0bd3f1a2b4c5d6e7f89",
+    "title": "my-video",
+    "originalName": "my-video.mp4",
+    "status": "pending",
+    "s3Key": "videos/3f7a1b2c-4d5e-6f7a-8b9c-0d1e2f3a4b5c.mp4",
+    "s3Url": "https://vidsense-videos.s3.ap-south-1.amazonaws.com/videos/3f7a...mp4",
+    "fileSize": 98764321,
+    "mimeType": "video/mp4",
+    "processingProgress": 0,
+    "processingStage": "pending",
+    "uploadedBy": "64f1a2b3c4d5e6f7a8b9c0d1",
+    "organisation": "default",
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Response `400 Bad Request`
+
+```json
+{ "message": "No video file provided" }
+```
+
+---
+
+### Video Status Flow
+
+After upload, the video moves through these statuses automatically:
+
+```
+pending → processing → safe
+                    → flagged
+```
+
+Listen for real-time updates via Socket.io events `processing_progress` and `processing_complete`.
+
+---
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:5000/api/videos/upload \
+  -H "Authorization: Bearer eyJhbGci..." \
+  -F "video=@/path/to/video.mp4" \
+  -F "title=My Test Video"
+```
+
+```js JavaScript
+const formData = new FormData();
+formData.append('video', fileInput.files[0]);
+formData.append('title', 'My Test Video');
+
+const res = await fetch('/api/videos/upload', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}` },
+  body: formData,
+});
+const { video } = await res.json();
+```
+</CodeGroup>

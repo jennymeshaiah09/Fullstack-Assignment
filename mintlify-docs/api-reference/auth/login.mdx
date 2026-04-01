@@ -1,0 +1,75 @@
+---
+title: Login
+description: Authenticate and receive a JWT token
+api: POST /api/auth/login
+---
+
+## Login
+
+Authenticates an existing user and returns a JWT token.
+
+**No authentication required.**
+
+---
+
+### Request Body
+
+```json
+{
+  "email": "jenny@example.com",
+  "password": "password123"
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `email` | string | ✅ | Registered email address |
+| `password` | string | ✅ | Account password |
+
+---
+
+### Response `200 OK`
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "64f1a2b3c4d5e6f7a8b9c0d1",
+    "name": "Jenny",
+    "email": "jenny@example.com",
+    "role": "admin"
+  }
+}
+```
+
+### Response `401 Unauthorized`
+
+```json
+{ "message": "Invalid credentials" }
+```
+
+---
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "jenny@example.com", "password": "password123" }'
+```
+
+```js JavaScript
+const res = await fetch('/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email: 'jenny@example.com', password: 'password123' }),
+});
+const { token, user } = await res.json();
+localStorage.setItem('token', token);
+```
+</CodeGroup>
+
+<Tip>
+  Store the token immediately and add it to your HTTP client's default headers for all subsequent requests.
+</Tip>

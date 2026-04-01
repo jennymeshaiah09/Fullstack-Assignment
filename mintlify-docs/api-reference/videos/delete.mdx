@@ -1,0 +1,66 @@
+---
+title: Delete Video
+description: Permanently delete a video from S3 and MongoDB
+api: DELETE /api/videos/{id}
+---
+
+## Delete Video
+
+Permanently deletes a video. Removes the file from AWS S3 **and** the metadata document from MongoDB in a single operation.
+
+**Requires authentication.** Only the video's owner or an admin can delete it.
+
+---
+
+### Path Parameters
+
+| Parameter | Description |
+|---|---|
+| `id` | MongoDB `_id` of the video to delete |
+
+### Request
+
+```http
+DELETE /api/videos/69ccf0bd3f1a2b4c5d6e7f89
+Authorization: Bearer <token>
+```
+
+---
+
+### Response `200 OK`
+
+```json
+{ "message": "Video deleted successfully" }
+```
+
+### Response `404 Not Found`
+
+```json
+{ "message": "Video not found" }
+```
+
+### Response `403 Forbidden`
+
+```json
+{ "message": "Not authorised to delete this video" }
+```
+
+---
+
+### What Gets Deleted
+
+1. **S3 object** — `DeleteObjectCommand` is sent for `video.s3Key` (falls back to `video.filePath`)
+2. **MongoDB document** — `Video.findByIdAndDelete(id)`
+
+<Warning>
+  This operation is **permanent and irreversible**. The video file and all its metadata (including analysis results) are deleted immediately. Thumbnails stored separately at `thumbnails/<id>.jpg` in S3 are not currently deleted — this is a known limitation.
+</Warning>
+
+---
+
+### Example
+
+```bash cURL
+curl -X DELETE http://localhost:5000/api/videos/69ccf0bd3f1a2b4c5d6e7f89 \
+  -H "Authorization: Bearer eyJhbGci..."
+```
