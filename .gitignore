@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+**/node_modules/
+Full Stack Assignment (3).pdf
+# Environment variables
+backend/.env
+.env
+.env.local
+.env.production
+
+# Google credentials (sensitive)
+backend/config/google-credentials.json
+
+# Build output
+frontend/dist/
+frontend/build/
+
+# Logs
+*.log
+npm-debug.log*
+nodemon-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Uploads (if any local files)
+backend/uploads/
