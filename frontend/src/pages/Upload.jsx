@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 import axios from 'axios';
 import ProcessingStatus from '../components/ProcessingStatus.jsx';
 
-const SOCKET_URL = 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const MAX_FILE_SIZE_MB = 500;
 const ACCEPTED_TYPES   = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
 
@@ -123,7 +123,7 @@ export default function Upload() {
       const token = localStorage.getItem('token');
 
       // Step 1: Get presigned URL from backend
-      const presignRes = await axios.get('http://localhost:5000/api/videos/presigned-url', {
+      const presignRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/videos/presigned-url`, {
         params: { filename: file.name, mimeType: file.type },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -139,7 +139,7 @@ export default function Upload() {
       });
 
       // Step 3: Tell backend upload is done — save metadata + start analysis
-      const confirmRes = await axios.post('http://localhost:5000/api/videos/confirm-upload', {
+      const confirmRes = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/videos/confirm-upload`, {
         s3Key,
         title: file.name.replace(/\.[^/.]+$/, ''),
         originalName: file.name,

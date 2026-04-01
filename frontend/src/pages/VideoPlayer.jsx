@@ -94,7 +94,7 @@ export default function VideoPlayer() {
 
   const meta = STATUS_META[video.status] || STATUS_META.pending;
   const token = localStorage.getItem('token');
-  const streamUrl = `http://localhost:5000/api/videos/${id}/stream?token=${token}`;
+  const streamUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/videos/${id}/stream?token=${token}`;
 
   return (
     <div className="page-wrapper fade-in">
