@@ -1,4 +1,4 @@
-# PulseVid — Video Sensitivity Analysis Platform
+# PulseVid - Video Sensitivity Analysis Platform
 
 A full-stack application for uploading, processing, and streaming videos with AI-powered sensitivity analysis. Built with Node.js, React, MongoDB, AWS S3, and Google Cloud Video Intelligence API.
 
@@ -82,16 +82,16 @@ PulseVid allows users to upload videos which are then automatically analysed for
 
 ## Features
 
-- **Video upload** — drag & drop or file browser, supports MP4, WebM, MOV, AVI, MKV up to 500MB
-- **Real-time progress** — live processing stages (Validating → Analysing → Classifying → Complete) via Socket.io
-- **AI sensitivity analysis** — Google Cloud Video Intelligence detects adult content, violence, and hate speech
-- **Large file support** — files >40MB are routed via Google Cloud Storage for analysis
-- **Video streaming** — HTTP range request support for smooth in-browser playback
-- **Thumbnail generation** — FFmpeg extracts frame at 2 seconds, uploaded to S3
-- **Video library** — filter by status (safe/flagged/processing/pending), search by title, sort by date/name
-- **JWT authentication** — register/login with role-based access control
-- **Multi-tenant** — users only see their own videos; admins see all
-- **Delete videos** — removes from both S3 and MongoDB
+- **Video upload** - drag & drop or file browser, supports MP4, WebM, MOV, AVI, MKV up to 500MB
+- **Real-time progress** - live processing stages (Validating → Analysing → Classifying → Complete) via Socket.io
+- **AI sensitivity analysis** - Google Cloud Video Intelligence detects adult content, violence, and hate speech
+- **Large file support** - files >40MB are routed via Google Cloud Storage for analysis
+- **Video streaming** - HTTP range request support for smooth in-browser playback
+- **Thumbnail generation** - FFmpeg extracts frame at 2 seconds, uploaded to S3
+- **Video library** - filter by status (safe/flagged/processing/pending), search by title, sort by date/name
+- **JWT authentication** - register/login with role-based access control
+- **Multi-tenant** - users only see their own videos; admins see all
+- **Delete videos** - removes from both S3 and MongoDB
 
 ---
 
@@ -179,13 +179,13 @@ backend/config/google-credentials.json
 ### 4. Run the application
 
 ```bash
-# Terminal 1 — Backend
+# Terminal 1 - Backend
 cd backend
 npm run dev        # uses nodemon, restarts on changes
 # or
 npm start          # production
 
-# Terminal 2 — Frontend
+# Terminal 2 - Frontend
 cd frontend
 npm run dev        # Vite dev server at http://localhost:5173
 ```
@@ -223,7 +223,7 @@ UPLOAD_DIR=uploads
 
 ## API Reference
 
-### Auth Routes — `/api/auth`
+### Auth Routes - `/api/auth`
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -256,7 +256,7 @@ UPLOAD_DIR=uploads
 
 ---
 
-### Video Routes — `/api/videos`
+### Video Routes - `/api/videos`
 
 All video routes require `Authorization: Bearer <token>` header.
 
@@ -323,8 +323,8 @@ Analysis is powered by **Google Cloud Video Intelligence API**.
 ### How it works
 
 1. After upload, the backend downloads the video from S3 to a temp directory
-2. If the file is **≤ 40MB** — sent as base64 inline to the API
-3. If the file is **> 40MB** — uploaded to `pulsevid-video-intel-tmp` GCS bucket, then passed as `gs://` URI
+2. If the file is **≤ 40MB** - sent as base64 inline to the API
+3. If the file is **> 40MB** - uploaded to `pulsevid-video-intel-tmp` GCS bucket, then passed as `gs://` URI
 4. The temp file is deleted from GCS immediately after analysis
 5. Results are stored in MongoDB and emitted via Socket.io
 
@@ -356,7 +356,7 @@ Socket.io is used to push processing updates to the frontend without polling.
 
 ### Events emitted by server
 
-**`processing_progress`** — fired at each stage:
+**`processing_progress`** - fired at each stage:
 ```json
 {
   "videoId": "69ccf0bd...",
@@ -365,7 +365,7 @@ Socket.io is used to push processing updates to the frontend without polling.
 }
 ```
 
-**`processing_complete`** — fired when analysis is done:
+**`processing_complete`** - fired when analysis is done:
 ```json
 {
   "videoId": "69ccf0bd...",
@@ -396,7 +396,7 @@ Socket.io is used to push processing updates to the frontend without polling.
 1. User registers/logs in → receives JWT (expires in 7 days)
 2. JWT stored in `localStorage`
 3. All API requests include `Authorization: Bearer <token>` header
-4. For video streaming via browser `<video>` tag — token passed as `?token=` query param
+4. For video streaming via browser `<video>` tag - token passed as `?token=` query param
 
 ### Roles
 
@@ -404,7 +404,7 @@ Socket.io is used to push processing updates to the frontend without polling.
 |---|---|
 | `viewer` | View and stream own videos only |
 | `editor` | Upload, view, stream, delete own videos |
-| `admin` | Full access — can view/stream/delete any user's videos |
+| `admin` | Full access - can view/stream/delete any user's videos |
 
 ### Video streaming auth
 The stream endpoint accepts the JWT as a query parameter because browsers send video requests without custom headers:
