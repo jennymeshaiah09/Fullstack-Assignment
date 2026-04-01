@@ -12,16 +12,23 @@ const videoRoutes = require('./routes/videos');
 const app = express();
 const httpServer = http.createServer(app);
 
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://fullstack-assignment-delta.vercel.app',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 const io = new Server(httpServer, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST'],
   },
 });
 
 app.set('io', io);
 
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
