@@ -146,7 +146,7 @@ export default function Navbar() {
         <NavLink to="/dashboard" style={styles.logo}>
           <span style={styles.logoIcon}>▶</span>
           <span style={styles.logoText}>
-            Pulse<span style={styles.logoAccent}>Vid</span>
+            VidSense<span style={styles.logoAccent}>AI</span>
           </span>
         </NavLink>
 

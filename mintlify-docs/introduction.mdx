@@ -1,0 +1,80 @@
+---
+title: Introduction
+description: Video Sensitivity Analyser — AI-powered content moderation for video
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.png"
+  alt="VidSense AI Hero"
+/>
+
+# Welcome to Video Sensitivity Analyser
+
+**VidSense AI** (Video Sensitivity Analyser) is a full-stack video platform that lets users upload, store, and stream videos — with every video automatically scanned for sensitive content using Google Cloud Video Intelligence API.
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get the app running locally in under 5 minutes
+  </Card>
+  <Card
+    title="Architecture"
+    icon="sitemap"
+    href="/architecture"
+  >
+    Understand how all the pieces fit together
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api-reference/auth/register"
+  >
+    Explore all REST endpoints with request/response examples
+  </Card>
+  <Card
+    title="AI Analysis"
+    icon="brain"
+    href="/analysis/overview"
+  >
+    Learn how sensitivity scoring works
+  </Card>
+</CardGroup>
+
+## What VidSense AI Does
+
+When a user uploads a video:
+
+<Steps>
+  <Step title="Upload to AWS S3">
+    The video is streamed directly into an S3 bucket with a UUID key.
+  </Step>
+  <Step title="Async AI Processing">
+    Google Cloud Video Intelligence analyses every frame for adult content, violence, and hate speech — in the background.
+  </Step>
+  <Step title="Real-time Updates">
+    Socket.io pushes live stage updates (Validating → Analysing → Classifying → Complete) to the browser.
+  </Step>
+  <Step title="Classification">
+    The video is marked `safe` or `flagged` with a 0–95 sensitivity score and stored in MongoDB.
+  </Step>
+</Steps>
+
+## Tech Stack at a Glance
+
+| Layer | Technology |
+|---|---|
+| Backend API | Node.js + Express |
+| Database | MongoDB Atlas (Mongoose) |
+| File Storage | AWS S3 |
+| AI Analysis | Google Cloud Video Intelligence |
+| Real-time | Socket.io |
+| Frontend | React 18 + Vite |
+| Auth | JWT (jsonwebtoken + bcryptjs) |
+
+<Note>
+  VidSense AI was built as a full-stack engineering assignment demonstrating end-to-end video processing with cloud AI.
+</Note>

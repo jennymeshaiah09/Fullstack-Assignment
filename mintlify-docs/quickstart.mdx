@@ -1,0 +1,116 @@
+---
+title: Quickstart
+description: Get Video Sensitivity Analyser running locally in under 5 minutes
+---
+
+## Prerequisites
+
+Before you begin, make sure you have the following:
+
+<AccordionGroup>
+  <Accordion title="Node.js 18+">
+    Download from [nodejs.org](https://nodejs.org). Verify with:
+    ```bash
+    node --version  # should be >= 18.0.0
+    ```
+  </Accordion>
+  <Accordion title="MongoDB Atlas">
+    Sign up at [mongodb.com/atlas](https://www.mongodb.com/cloud/atlas). Create a free M0 cluster and copy the connection string.
+  </Accordion>
+  <Accordion title="AWS S3 Bucket">
+    - Create an IAM user with `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` permissions
+    - Create an S3 bucket (e.g. `vidsense-videos`) in your chosen region
+    - Note the bucket name, region, access key ID, and secret access key
+  </Accordion>
+  <Accordion title="Google Cloud Setup">
+    1. Create a project at [console.cloud.google.com](https://console.cloud.google.com)
+    2. Enable **Video Intelligence API** and **Cloud Storage API**
+    3. Create a service account and download the JSON key file
+    4. Create a GCS bucket named `vidsense-video-intel-tmp` (used for files > 40 MB)
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## 1. Clone and Install
+
+```bash
+git clone https://github.com/jennymeshaiah09/Fullstack-Assignment.git
+cd Fullstack-Assignment
+
+# Install backend dependencies
+cd backend && npm install
+
+# Install frontend dependencies
+cd ../frontend && npm install
+```
+
+---
+
+## 2. Configure the Backend
+
+Create `backend/.env` by copying the example:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Then fill in your values — see the full [Environment Variables](/environment-variables) reference.
+
+---
+
+## 3. Add Google Credentials
+
+Place your GCP service account JSON key at:
+
+```
+backend/config/google-credentials.json
+```
+
+<Warning>
+  Never commit this file. It is already in `.gitignore`.
+  For production deployments (e.g. Render), use the `GOOGLE_CREDENTIALS_JSON` environment variable instead.
+</Warning>
+
+---
+
+## 4. Start the Servers
+
+Open **two terminals**:
+
+<CodeGroup>
+```bash Terminal 1 — Backend
+cd backend
+npm run dev
+# Server starts on http://localhost:5000
+```
+
+```bash Terminal 2 — Frontend
+cd frontend
+npm run dev
+# Vite dev server at http://localhost:5173
+```
+</CodeGroup>
+
+Navigate to **http://localhost:5173** and register an account to get started.
+
+---
+
+## 5. Register Your First User
+
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Jenny",
+    "email": "jenny@example.com",
+    "password": "password123",
+    "role": "admin"
+  }'
+```
+
+You'll receive a JWT token. From here you can upload videos via the UI or the API.
+
+<Tip>
+  Register with `"role": "admin"` to unlock the full admin dashboard and cross-user video management.
+</Tip>

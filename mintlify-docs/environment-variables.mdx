@@ -1,0 +1,114 @@
+---
+title: Environment Variables
+description: All environment variables required to run Video Sensitivity Analyser
+---
+
+Create a file at `backend/.env` with the following variables.
+
+## Server
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `5000` | Port the Express server listens on |
+| `NODE_ENV` | `development` | Set to `production` for production deployments |
+
+## Database
+
+| Variable | Required | Description |
+|---|---|---|
+| `MONGODB_URI` | ✅ Yes | MongoDB Atlas connection string |
+
+```env
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<dbname>?retryWrites=true&w=majority
+```
+
+## Authentication
+
+| Variable | Required | Description |
+|---|---|---|
+| `JWT_SECRET` | ✅ Yes | Secret used to sign and verify JWTs — use a long random string |
+| `JWT_EXPIRES_IN` | No | Token lifetime (default: `7d`) |
+
+```env
+JWT_SECRET=a-very-long-random-secret-string-here
+JWT_EXPIRES_IN=7d
+```
+
+## AWS S3
+
+| Variable | Required | Description |
+|---|---|---|
+| `AWS_ACCESS_KEY_ID` | ✅ Yes | IAM user access key |
+| `AWS_SECRET_ACCESS_KEY` | ✅ Yes | IAM user secret key |
+| `AWS_REGION` | ✅ Yes | Bucket region (e.g. `ap-south-1`) |
+| `AWS_S3_BUCKET` | ✅ Yes | S3 bucket name for video + thumbnail storage |
+
+```env
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+AWS_REGION=ap-south-1
+AWS_S3_BUCKET=vidsense-videos
+```
+
+## File Upload
+
+| Variable | Default | Description |
+|---|---|---|
+| `MAX_FILE_SIZE` | `524288000` | Maximum upload size in bytes (500 MB) |
+| `UPLOAD_DIR` | `uploads` | Local temp directory (rarely used) |
+
+## Google Cloud (Production)
+
+<Note>
+  In development, the app reads credentials from `backend/config/google-credentials.json`.  
+  In production (e.g. Render), use the environment variable below to avoid committing the key file.
+</Note>
+
+| Variable | Required | Description |
+|---|---|---|
+| `GOOGLE_CREDENTIALS_JSON` | Prod only | Full JSON string of the GCP service account key |
+
+```env
+GOOGLE_CREDENTIALS_JSON={"type":"service_account","project_id":"...","private_key":"...","client_email":"..."}
+```
+
+## CORS (Production)
+
+| Variable | Required | Description |
+|---|---|---|
+| `FRONTEND_URL` | Prod only | Deployed frontend URL (added to CORS whitelist) |
+
+```env
+FRONTEND_URL=https://fullstack-assignment-delta.vercel.app
+```
+
+---
+
+## Full Example `.env`
+
+```env
+# Server
+PORT=5000
+NODE_ENV=development
+
+# Database
+MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/vidsense
+
+# Auth
+JWT_SECRET=my-super-secret-jwt-key-minimum-32-chars
+JWT_EXPIRES_IN=7d
+
+# AWS S3
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+AWS_REGION=ap-south-1
+AWS_S3_BUCKET=vidsense-videos
+
+# Upload limits
+MAX_FILE_SIZE=524288000
+UPLOAD_DIR=uploads
+```
+
+<Warning>
+  **Never commit `.env` or `google-credentials.json` to version control.** Both are in `.gitignore` by default.
+</Warning>

@@ -111,7 +111,7 @@ export default function Register() {
         }}>
           <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '6px' }}>Get started</h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-            Join PulseVid to start uploading and analysing videos
+            Join VidSense AI to start uploading and analysing videos
           </p>
 
           {error && (

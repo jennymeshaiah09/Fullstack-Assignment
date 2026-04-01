@@ -1,0 +1,107 @@
+---
+title: Sensitivity Analysis Overview
+description: How PulseVid uses Google Cloud Video Intelligence to detect sensitive content
+---
+
+## What Gets Analysed
+
+Every uploaded video is scanned across **three sensitivity categories**:
+
+<CardGroup cols={3}>
+  <Card title="Adult / Explicit" icon="eye-slash">
+    Per-frame pornography likelihood using `EXPLICIT_CONTENT_DETECTION`
+  </Card>
+  <Card title="Violence" icon="shield-exclamation">
+    Video-level label detection for fighting, weapons, blood, combat, war and related concepts
+  </Card>
+  <Card title="Hate Speech" icon="ban">
+    Label detection for hate, racism, discrimination, extremism, and terrorism-related labels
+  </Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+Two Google Cloud Video Intelligence API calls are made **in parallel** for every video:
+
+```js
+const [[explicitOp], [labelOp]] = await Promise.all([
+  videoIntelligenceClient.annotateVideo({ features: ['EXPLICIT_CONTENT_DETECTION'], ... }),
+  videoIntelligenceClient.annotateVideo({ features: ['LABEL_DETECTION'], ... }),
+]);
+
+const [[explicitResult], [labelResult]] = await Promise.all([
+  explicitOp.promise(),
+  labelOp.promise(),
+]);
+```
+
+Running both calls simultaneously keeps processing time as short as possible.
+
+---
+
+## Detection Methods
+
+### Adult Content (`EXPLICIT_CONTENT_DETECTION`)
+
+The API returns a likelihood value for each video frame. PulseVid takes the **maximum likelihood across all frames**:
+
+```js
+const frames = explicitResult.annotationResults[0].explicitAnnotation.frames;
+let maxAdultScore = 0;
+for (const frame of frames) {
+  const score = LIKELIHOOD_SCORES[frame.pornographyLikelihood] || 0;
+  if (score > maxAdultScore) maxAdultScore = score;
+}
+```
+
+### Violence & Hate Speech (`LABEL_DETECTION`)
+
+The API returns segment and shot-level label annotations. PulseVid checks each label's description against predefined keyword sets:
+
+```js
+const VIOLENCE_LABELS = new Set([
+  'violence', 'fighting', 'fight', 'weapon', 'gun', 'knife', 'blood',
+  'shooting', 'explosion', 'combat', 'murder', 'killing', 'assault',
+  'attack', 'war', 'battle',
+]);
+
+const HATE_LABELS = new Set([
+  'hate', 'racism', 'discrimination', 'extremism', 'terrorist', 'terrorism',
+]);
+```
+
+For each matching label, the confidence score (0–1) is multiplied by 100 to get the numeric score.
+
+---
+
+## Final Score
+
+```js
+const sensitivityScore = Math.max(maxAdultScore, maxViolenceScore, maxHateScore);
+const isFlagged = sensitivityScore >= 40;
+```
+
+| Field | Description |
+|---|---|
+| `sensitivityScore` | Highest score across all three categories (0–95) |
+| `status` | `"safe"` if score < 40, `"flagged"` if score ≥ 40 |
+| `sensitivityDetails.adult` | `true` if adult score ≥ 40 |
+| `sensitivityDetails.violence` | `true` if violence score ≥ 40 |
+| `sensitivityDetails.hate` | `true` if hate score ≥ 40 |
+
+---
+
+## API Pricing
+
+<Note>
+  Google Video Intelligence API pricing applies per feature per minute of video analysed.
+</Note>
+
+| Tier | Cost |
+|---|---|
+| First **1,000 minutes/month** per feature | Free |
+| Beyond free tier | **$0.10 / minute / feature** |
+
+**Example:** A 17-minute video with both `EXPLICIT_CONTENT_DETECTION` and `LABEL_DETECTION` enabled costs approximately **$0.34** beyond the free tier.

@@ -1,0 +1,96 @@
+---
+title: Scoring System
+description: How likelihood values map to numeric scores and the flagging threshold
+---
+
+## Likelihood to Score Mapping
+
+Google Cloud Video Intelligence returns likelihood values as either string names or numeric enum values. PulseVid maps both to a numeric 0–95 scale:
+
+| Likelihood | Enum | Numeric Score |
+|---|---|---|
+| `LIKELIHOOD_UNSPECIFIED` | 0 | 0 |
+| `VERY_UNLIKELY` | 1 | 0 |
+| `UNLIKELY` | 2 | 10 |
+| `POSSIBLE` | 3 | 40 |
+| `LIKELY` | 4 | 75 |
+| `VERY_LIKELY` | 5 | 95 |
+
+```js
+const LIKELIHOOD_SCORES = {
+  0: 0,   // LIKELIHOOD_UNSPECIFIED
+  1: 0,   // VERY_UNLIKELY
+  2: 10,  // UNLIKELY
+  3: 40,  // POSSIBLE
+  4: 75,  // LIKELY
+  5: 95,  // VERY_LIKELY
+  // String fallbacks
+  VERY_UNLIKELY: 0,
+  UNLIKELY: 10,
+  POSSIBLE: 40,
+  LIKELY: 75,
+  VERY_LIKELY: 95,
+};
+```
+
+---
+
+## Flagging Threshold
+
+A video is **flagged** when any single category reaches a score of **40 or higher** (i.e. `POSSIBLE` or above):
+
+```js
+const isFlagged = sensitivityScore >= 40;
+const status = isFlagged ? 'flagged' : 'safe';
+```
+
+This is intentionally conservative — a `POSSIBLE` rating is already meaningful for content moderation.
+
+---
+
+## Per-Category Scoring
+
+### Adult Content
+
+The maximum likelihood score across **all video frames** is used:
+
+```js
+let maxAdultScore = 0;
+for (const frame of frames) {
+  const score = LIKELIHOOD_SCORES[frame.pornographyLikelihood] || 0;
+  if (score > maxAdultScore) maxAdultScore = score;
+}
+```
+
+### Violence & Hate
+
+For label-based categories, confidence (0.0–1.0) from `LABEL_DETECTION` is converted:
+
+```js
+const score = Math.round(maxConfidence * 100);
+// e.g. confidence 0.82 → score 82
+```
+
+This means a label with **82% confidence** would score 82, which exceeds the 40 threshold and would flag the video.
+
+---
+
+## Final Score Calculation
+
+```js
+const sensitivityScore = Math.max(maxAdultScore, maxViolenceScore, maxHateScore);
+```
+
+The `sensitivityScore` field on the Video document always reflects the **worst-case category** — useful for sorting or filtering by severity.
+
+---
+
+## Score Interpretation
+
+| Score Range | Meaning |
+|---|---|
+| 0–9 | Very unlikely — essentially no sensitive content detected |
+| 10–39 | Unlikely — low-level signal, video marked `safe` |
+| 40–74 | Possible — content is potentially sensitive, video **flagged** |
+| 75–94 | Likely — strong signal of sensitive content |
+| 95 | Very likely — high-confidence sensitive content detected |

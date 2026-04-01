@@ -1,0 +1,111 @@
+---
+title: Architecture
+description: How PulseVid's backend, storage, and AI layers connect
+---
+
+## System Diagram
+
+```
+┌─────────────────────┐         HTTP / WebSocket          ┌─────────────────────────┐
+│    React Frontend    │ ◄──────────────────────────────► │   Express API (5000)     │
+│  (Vite / React 18)  │                                   └────────────┬────────────┘
+└─────────────────────┘                                                │
+                                          ┌────────────────────────────┼──────────────────────────┐
+                                          │                            │                          │
+                                 ┌────────▼────────┐       ┌──────────▼──────────┐  ┌────────────▼──────────┐
+                                 │  MongoDB Atlas   │       │      AWS S3          │  │  Google Cloud Video   │
+                                 │  (metadata)      │       │  (videos + thumbs)   │  │  Intelligence API     │
+                                 └─────────────────┘       └─────────────────────┘  └───────────────────────┘
+```
+
+---
+
+## Layers
+
+<CardGroup cols={3}>
+  <Card title="Frontend" icon="browser">
+    React 18 SPA built with Vite. Communicates with the backend over HTTP (Axios) and WebSocket (Socket.io-client).
+  </Card>
+  <Card title="Backend API" icon="server">
+    Express.js REST API with JWT middleware, Multer for uploads, and Socket.io for real-time events.
+  </Card>
+  <Card title="Storage + AI" icon="cloud">
+    AWS S3 for durable video/thumbnail storage. Google Cloud Video Intelligence for frame-level content analysis.
+  </Card>
+</CardGroup>
+
+---
+
+## Request Lifecycle
+
+### Upload Request
+
+```
+Browser → POST /api/videos/upload (multipart/form-data)
+       → protect middleware (JWT verify)
+       → Multer (buffer file in memory)
+       → PutObjectCommand → AWS S3
+       → Video.create() → MongoDB
+       → processVideo() [async, non-blocking]
+       → 201 Created { video }
+```
+
+### Async Processing Pipeline
+
+```
+processVideo(videoId)
+  ├─ Video.update(status: "processing")
+  ├─ generateThumbnail() → ffmpeg → S3 [fire-and-forget]
+  ├─ emit processing_progress { stage: "validating", progress: 20 }
+  ├─ emit processing_progress { stage: "analysing",  progress: 50 }
+  ├─ analyseWithGoogleVideoIntelligence(s3Key)
+  │    ├─ downloadFromS3() → tmp file
+  │    ├─ size ≤ 40MB  → base64 inline
+  │    └─ size  > 40MB → upload to GCS → gs:// URI
+  │         ├─ annotateVideo(EXPLICIT_CONTENT_DETECTION)  ┐ parallel
+  │         └─ annotateVideo(LABEL_DETECTION)             ┘
+  ├─ emit processing_progress { stage: "classifying", progress: 80 }
+  ├─ Video.update({ status, sensitivityScore, sensitivityDetails })
+  └─ emit processing_complete { videoId, status, sensitivityScore, ... }
+```
+
+### Stream Request
+
+```
+Browser <video> tag → GET /api/videos/:id/stream?token=<jwt>
+                    → protect middleware (token from query param)
+                    → GetObjectCommand (with Range header)
+                    → S3 stream piped to response (206 Partial Content)
+```
+
+---
+
+## Project Structure
+
+```
+Fullstack Assignment/
+├── backend/
+│   ├── config/
+│   │   ├── db.js                      # Mongoose connection
+│   │   ├── s3.js                      # AWS S3 client
+│   │   └── google-credentials.json    # GCP key (never commit)
+│   ├── controllers/
+│   │   ├── authController.js          # register, login, getMe
+│   │   └── videoController.js         # upload, process, stream, delete, admin
+│   ├── middleware/
+│   │   ├── auth.js                    # JWT protect + RBAC authorise
+│   │   └── upload.js                  # Multer memoryStorage (500 MB)
+│   ├── models/
+│   │   ├── User.js
+│   │   └── Video.js
+│   ├── routes/
+│   │   ├── auth.js                    # /api/auth/*
+│   │   └── videos.js                  # /api/videos/*
+│   └── server.js                      # Express + Socket.io entry point
+└── frontend/
+    └── src/
+        ├── components/                # Navbar, VideoCard, ProcessingStatus, ProtectedRoute
+        ├── context/AuthContext.jsx    # Global auth state
+        ├── pages/                     # Login, Register, Dashboard, Upload, Library, VideoPlayer, Admin
+        └── utils/api.js               # Axios instance with JWT interceptor
+```

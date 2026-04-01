@@ -1,0 +1,135 @@
+---
+title: Real-time Processing
+description: How Socket.io pushes live processing updates to the browser
+---
+
+## Overview
+
+PulseVid uses **Socket.io** so the frontend receives instant processing stage updates without polling. The server emits events as each stage completes; the React client listens and updates the UI in real time.
+
+---
+
+## Server-side Setup
+
+Socket.io is attached to the same HTTP server as Express:
+
+```js
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: ALLOWED_ORIGINS, methods: ['GET', 'POST'] },
+});
+
+app.set('io', io); // share with controllers
+```
+
+Inside `processVideo()`, the `io` instance is used to emit events:
+
+```js
+io.emit('processing_progress', { videoId, stage, progress });
+io.emit('processing_complete', { videoId, status, sensitivityScore, sensitivityDetails });
+```
+
+<Note>
+  Events are broadcast to **all connected clients**. The frontend filters events by `videoId` to update only the relevant video card.
+</Note>
+
+---
+
+## Events Reference
+
+### `processing_progress`
+
+Emitted at each stage transition.
+
+```json
+{
+  "videoId": "69ccf0bd3f1a2b4c5d6e7f89",
+  "stage": "analysing",
+  "progress": 50
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `videoId` | string | MongoDB `_id` of the video being processed |
+| `stage` | string | Current stage name |
+| `progress` | number | Percentage (0–100) |
+
+---
+
+### `processing_complete`
+
+Emitted once analysis finishes and results are saved.
+
+```json
+{
+  "videoId": "69ccf0bd3f1a2b4c5d6e7f89",
+  "status": "flagged",
+  "sensitivityScore": 85,
+  "sensitivityDetails": {
+    "violence": false,
+    "adult": true,
+    "hate": false
+  }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `videoId` | string | MongoDB `_id` |
+| `status` | `"safe"` \| `"flagged"` | Final classification |
+| `sensitivityScore` | number | Highest score across all categories (0–95) |
+| `sensitivityDetails.violence` | boolean | `true` if violence score ≥ 40 |
+| `sensitivityDetails.adult` | boolean | `true` if adult score ≥ 40 |
+| `sensitivityDetails.hate` | boolean | `true` if hate score ≥ 40 |
+
+---
+
+## Processing Stages
+
+| Stage | Progress | Action |
+|---|---|---|
+| `validating` | 20% | File integrity check; 800ms delay |
+| `analysing` | 50% | Google Video Intelligence API call in progress |
+| `classifying` | 80% | Parsing likelihood values, computing score |
+| `complete` | 100% | Results saved; `processing_complete` emitted |
+
+---
+
+## Client-side Listening
+
+The React `ProcessingStatus` component and `Dashboard` page connect to Socket.io and listen for events:
+
+```js
+import { io } from 'socket.io-client';
+
+const socket = io(import.meta.env.VITE_API_URL);
+
+socket.on('processing_progress', ({ videoId, stage, progress }) => {
+  // Update the matching video card
+});
+
+socket.on('processing_complete', ({ videoId, status, sensitivityScore }) => {
+  // Refresh video data from API
+});
+```
+
+<Tip>
+  When a `processing_complete` event is received, the frontend re-fetches the video from `GET /api/videos/:id` to get the full updated object including `sensitivityDetails`.
+</Tip>
+
+---
+
+## Fallback Behaviour
+
+If the Google Video Intelligence API call fails for any reason (network error, quota exceeded, etc.), the pipeline catches the error and falls back gracefully:
+
+```json
+{
+  "status": "safe",
+  "sensitivityScore": 5,
+  "sensitivityDetails": { "violence": false, "adult": false, "hate": false }
+}
+```
+
+The video is marked `safe` with a minimal score rather than crashing or leaving it stuck in `processing`.

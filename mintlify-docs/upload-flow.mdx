@@ -1,0 +1,122 @@
+---
+title: Upload Flow
+description: Step-by-step breakdown of how a video upload works
+---
+
+## Overview
+
+The upload flow is **non-blocking** — the HTTP response is returned as soon as the video reaches S3, and AI analysis runs asynchronously in the background.
+
+<Steps>
+  <Step title="User Selects a Video">
+    The React `Upload` page provides a drag-and-drop zone. The user selects a file (MP4, WebM, MOV, AVI, or MKV, up to 500 MB).
+
+    Supported MIME types are validated client-side before the request is sent.
+  </Step>
+
+  <Step title="Multipart Upload to Backend">
+    The frontend POSTs to `/api/videos/upload` using `multipart/form-data` with the field name `video` and an optional `title` field.
+
+    ```http
+    POST /api/videos/upload
+    Authorization: Bearer <jwt>
+    Content-Type: multipart/form-data
+
+    video=<binary>
+    title=My Video Title
+    ```
+
+    Multer's `memoryStorage` holds the entire file buffer in RAM during the request.
+  </Step>
+
+  <Step title="Upload to AWS S3">
+    The backend sends a `PutObjectCommand` with a UUID-based key:
+
+    ```
+    videos/<uuid>.<ext>   →   S3 bucket
+    ```
+
+    The public S3 URL is constructed as:
+    ```
+    https://<bucket>.s3.<region>.amazonaws.com/videos/<uuid>.<ext>
+    ```
+  </Step>
+
+  <Step title="Save Metadata to MongoDB">
+    A `Video` document is created with `status: "pending"`:
+
+    ```json
+    {
+      "title": "My Video Title",
+      "status": "pending",
+      "s3Key": "videos/abc-123.mp4",
+      "s3Url": "https://...",
+      "fileSize": 98764321,
+      "mimeType": "video/mp4",
+      "uploadedBy": "<userId>"
+    }
+    ```
+  </Step>
+
+  <Step title="201 Response Returned">
+    The backend immediately responds with `201 Created` and the video object.  
+    The client can now show the video card in a "pending" state.
+  </Step>
+
+  <Step title="Async Processing Begins">
+    `processVideo(videoId, io)` is called **without `await`** — it runs in the background independently of the HTTP request.
+
+    See [Upload Flow Processing](/upload-flow#processing-pipeline) and [Real-time Processing](/realtime-processing) for details.
+  </Step>
+</Steps>
+
+---
+
+## Processing Pipeline
+
+After the HTTP response is sent, the following runs asynchronously:
+
+```
+processVideo(videoId)
+```
+
+| Step | Socket Event | Progress |
+|---|---|---|
+| Mark `status: "processing"` | — | — |
+| Thumbnail generation (FFmpeg) | — | Background |
+| `emit processing_progress` | `stage: "validating"` | 20% |
+| `emit processing_progress` | `stage: "analysing"` | 50% |
+| Google Video Intelligence API | — | (async wait) |
+| `emit processing_progress` | `stage: "classifying"` | 80% |
+| Save results to MongoDB | — | — |
+| `emit processing_complete` | Final result | 100% |
+
+---
+
+## Thumbnail Generation
+
+Runs concurrently (fire-and-forget) while the AI analysis happens:
+
+1. Download the video from S3 to a temp directory
+2. Extract the frame at `00:00:02` (2 seconds) at `640×360` resolution using FFmpeg
+3. Upload the JPEG to S3 at `thumbnails/<videoId>.jpg`
+4. Update the MongoDB document with `thumbnailUrl`
+
+<Note>
+  If thumbnail generation fails (e.g. the video is shorter than 2 seconds), the error is silently caught and the video continues processing normally. `thumbnailUrl` remains `null` in that case.
+</Note>
+
+---
+
+## Large File Routing
+
+Files over **40 MB** cannot be sent inline to the Google API. Instead they are staged via Google Cloud Storage:
+
+```
+File > 40 MB
+  → Upload to GCS: gs://pulsevid-video-intel-tmp/tmp/<uuid>_video.mp4
+  → Pass gs:// URI to Video Intelligence API
+  → Delete GCS object immediately after analysis
+```
+
+See [Large File Analysis](/analysis/large-files) for full details.

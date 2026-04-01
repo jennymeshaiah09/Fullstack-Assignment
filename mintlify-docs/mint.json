@@ -1,0 +1,112 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Video Sensitivity Analyser",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg",
+    "href": "https://fullstack-assignment-delta.vercel.app"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#6C63FF",
+    "light": "#A89BFF",
+    "dark": "#5A52D5",
+    "anchors": {
+      "from": "#6C63FF",
+      "to": "#00D4AA"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/jennymeshaiah09/Fullstack-Assignment"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Live App",
+    "url": "https://fullstack-assignment-delta.vercel.app"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Architecture",
+      "icon": "sitemap",
+      "url": "architecture"
+    },
+    {
+      "name": "AI Analysis",
+      "icon": "brain",
+      "url": "analysis"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "environment-variables"
+      ]
+    },
+    {
+      "group": "Core Concepts",
+      "pages": [
+        "architecture",
+        "upload-flow",
+        "realtime-processing"
+      ]
+    },
+    {
+      "group": "AI Analysis",
+      "pages": [
+        "analysis/overview",
+        "analysis/scoring",
+        "analysis/large-files"
+      ]
+    },
+    {
+      "group": "Authentication",
+      "pages": [
+        "auth/jwt",
+        "auth/roles"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api-reference/auth/register",
+        "api-reference/auth/login",
+        "api-reference/auth/me",
+        "api-reference/videos/upload",
+        "api-reference/videos/list",
+        "api-reference/videos/get",
+        "api-reference/videos/stream",
+        "api-reference/videos/delete",
+        "api-reference/admin/all-videos"
+      ]
+    },
+    {
+      "group": "Data Models",
+      "pages": [
+        "models/user",
+        "models/video"
+      ]
+    },
+    {
+      "group": "Frontend",
+      "pages": [
+        "frontend/overview",
+        "frontend/pages",
+        "frontend/components"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/jennymeshaiah09/Fullstack-Assignment"
+  }
+}
