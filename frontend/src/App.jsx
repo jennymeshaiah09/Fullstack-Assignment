@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Navbar from './components/Navbar.jsx';
 import Login from './pages/Login.jsx';
@@ -21,67 +22,70 @@ function AppLayout({ children }) {
 
 export default function App() {
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/login"    element={<Login />} />
-      <Route path="/register" element={<Register />} />
+    <>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/login"    element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-      {/* Protected routes — wrapped in AppLayout for the Navbar */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Dashboard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/upload"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Upload />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/library"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Library />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/video/:id"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <VideoPlayer />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+        {/* Protected routes — wrapped in AppLayout for the Navbar */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/upload"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Upload />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/library"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Library />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/video/:id"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <VideoPlayer />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AppLayout>
-              <Admin />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AppLayout>
+                <Admin />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Fallback */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+      <Analytics />
+    </>
   );
 }
